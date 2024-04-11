@@ -1,0 +1,89 @@
+---
+title: "Proyecto Estadística"
+author: "Ing. Darwin Gutiérrez"
+date: "2024-04-11"
+output: github_document
+---
+
+# Cargando mi base de datos
+
+```{r}
+#file.choose()
+library(dplyr)
+
+data <- read.csv("D:\\Experto en Ciencia de Datos\\MODULO 01 DataC. Estadística para la toma de decisiones\\Material\\BASES_DATOS_BASES_ZS2ZD2\\Iowa_Liquor_Sales.csv",stringsAsFactors = T, header = T)
+
+datos <- data %>% mutate(Sale..Dollars.=(as.numeric(substr(data$Sale..Dollars.,2,15))),
+                         City=toupper(City),
+                         Store.Name=toupper(Store.Name),
+                         Date=as.Date(Date,format="%m/%d/%Y"),
+                         anio=lubridate::year(Date)
+                         ) %>% 
+  rename(ventas= Sale..Dollars.,
+         ciudad=City,
+         categoria=Category.Name,
+         nombre_tienda=Store.Name)
+
+```
+
+
+# 1. ¿Cuál es el top 5(promedio de ventas), para el año 2016, para la ciudad CEDAR RAPIDS? 
+
+```{r}
+
+datos %>% 
+  group_by(ciudad,anio,nombre_tienda) %>% 
+  summarise(promedio_ventas=mean(ventas,na.rm = T,trim=0.9))%>% 
+  filter(ciudad=="CEDAR RAPIDS" & anio==2016)%>% 
+  top_n(5,promedio_ventas) %>% 
+  arrange(desc(promedio_ventas))
+
+```
+
+# 2.¿Cuáles fueron los 5 últimos vendedores(promedio de ventas, para el 2016, para davenport)?
+
+```{r}
+datos %>% 
+  group_by(ciudad,anio,Vendor.Name) %>% 
+  summarise(promedio_ventas = mean(ventas,na.rm = T)) %>% 
+  filter(ciudad=="DAVENPORT" & anio==2016) %>% 
+  arrange(promedio_ventas) %>% 
+  head(.,n=5)
+```
+
+# 3.¿Cuál es el top 5 de productos más vendidos, para el 2016 y 2017, por ciudad? 
+
+```{r}
+library(tidyverse)
+
+# top 5 productos mas vendidos para el año 2016
+
+datos %>% 
+  group_by(ciudad,anio,categoria)%>% 
+  summarise(total_vendida=sum(Bottles.Sold,na.rm = T)) %>% 
+  filter(anio==2016) %>% 
+  arrange(desc(total_vendida))%>% 
+  top_n(5,total_vendida)%>% 
+  pivot_wider(names_from = ciudad,
+              values_from = total_vendida,
+              names_prefix = "ciudad_",
+              values_fill=0)
+
+
+# top 5 productos mas vendidos para el año 2017
+
+datos %>% 
+  group_by(ciudad,anio,categoria)%>% 
+  summarise(total_vendida=sum(Bottles.Sold,na.rm = T)) %>% 
+  filter(anio==2017) %>% 
+  arrange(desc(total_vendida))%>%
+  top_n(5,total_vendida)%>%
+  pivot_wider(names_from = ciudad,
+              values_from = total_vendida,
+              names_prefix = "ciudad_",
+              values_fill=0)
+
+# NOTA: No hay registros de ventas en 3 productos en el año 2017. 
+```
+
+
